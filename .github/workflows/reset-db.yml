@@ -15,10 +15,9 @@ jobs:
        with:
         python-version: 3.9.12
 
-     - name: 安装项目依赖
-       working-directory: ./bing_wallpaper_api
+     - name: 安装数据库依赖
        run: |
-         pip install -r requirements.txt
+         pip install pymongo
        
      - name: 执行清空指令
        env:
