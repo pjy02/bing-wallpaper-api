@@ -1,10 +1,10 @@
-name: 2-清空数据库(触发原生初始化)
+name: 2-清空数据库并强行导入历史数据
 
 on:
   workflow_dispatch:
 
 jobs:
-  reset-database:
+  reset-and-import:
     runs-on: ubuntu-latest
     steps:
      - name: Checkout代码
@@ -19,23 +19,50 @@ jobs:
        run: |
          pip install pymongo
        
-     - name: 执行清空指令
+     - name: 执行映射与导入
        env:
          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-         STORAGE_TYPE: mongodb
-       working-directory: ./
        run: |
          python -c "
-         import sys, os
-         sys.path.append(os.path.abspath('bing_wallpaper_api'))
-         from utils.mongodb_utils import db_init
+         import json, os
+         from pymongo import MongoClient
          
-         mkts = ['zh-CN', 'en-US', 'ja-JP', 'en-GB', 'de-DE', 'fr-FR', 'it-IT', 'en-CA', 'en-IN']
-         for mkt in mkts:
-             try:
-                 collection = db_init(mkt)
-                 collection.delete_many({})
-                 print(f'✅ 成功清空集合，当前数据量归零: {mkt}')
-             except Exception as e:
-                 print(f'❌ 清空 {mkt} 失败: {e}')
+         client = MongoClient(os.environ['MONGODB_URI'])
+         db = client['bing']
+         
+         # 关键修复：文件名与数据库集合名称的精确对应关系
+         mkt_mapping = {
+             'zh-CN': 'cn',
+             'en-US': 'us',
+             'ja-JP': 'jp',
+             'en-GB': 'gb',
+             'de-DE': 'de',
+             'fr-FR': 'fr',
+             'it-IT': 'it',
+             'en-CA': 'ca',
+             'en-IN': 'in'
+         }
+         
+         for file_mkt, db_col in mkt_mapping.items():
+             path = f'data/{file_mkt}_all.json'
+             if os.path.exists(path):
+                 print(f'正在读取 {file_mkt} 历史文件，准备写入目标集合 {db_col}...')
+                 with open(path, 'r', encoding='utf-8') as f:
+                     try:
+                         data = json.load(f)
+                         items = data.get('data', [])
+                     except Exception as e:
+                         print(f'❌ 读取JSON失败: {e}')
+                         continue
+                         
+                 if items:
+                     # 1. 清空旧数据
+                     db[db_col].delete_many({})
+                     # 2. 直接插入原样数据（完美匹配集合格式要求）
+                     db[db_col].insert_many(items)
+                     print(f'✅ 成功！将 {len(items)} 条数据导入了 {db_col} 集合！')
+                 else:
+                     print(f'⚠️ {file_mkt} 数据为空。')
+             else:
+                 print(f'⚠️ 未找到文件: {path}')
          "
