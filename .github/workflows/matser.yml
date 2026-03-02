@@ -53,7 +53,7 @@ jobs:
      - name: Push changes
        uses:  ad-m/github-push-action@master
        with:
-         github_token: ${{ secrets.MY_GIT_TOKEN }}
+         github_token: ${{ secrets.GITHUB_TOKEN }}
          branch: master
 
 #     - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
