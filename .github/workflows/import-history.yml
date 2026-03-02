@@ -38,9 +38,28 @@ jobs:
                      data = json.load(f)
                      items = data.get('data', [])
                      if items:
-                         db[mkt].delete_many({}) # 先清空旧数据防止重复
-                         db[mkt].insert_many(items) # 批量插入历史数据
-                         print(f'✅ 成功将 {len(items)} 条历史数据导入到 {mkt} 集合！')
+                         transformed_items = []
+                         for item in items:
+                             # 核心修复：把生成的 JSON 格式，反向还原为数据库期望的必应原始格式
+                             enddate = item.get('datetime', '').replace('-', '')
+                             url = item.get('url', '').replace('https://bing.com', '').replace('https://www.bing.com', '')
+                             urlbase = url.split('_1920x1080')[0].split('_UHD')[0] if url else ''
+                             
+                             transformed_item = {
+                                 'startdate': enddate,
+                                 'enddate': enddate,
+                                 'url': url,
+                                 'urlbase': urlbase,
+                                 'copyright': item.get('copyright', ''),
+                                 'copyrightlink': item.get('copyrightlink', ''),
+                                 'title': item.get('title', ''),
+                                 'hsh': item.get('hsh', '')
+                             }
+                             transformed_items.append(transformed_item)
+                             
+                         db[mkt].delete_many({}) # 清空旧的错误数据
+                         db[mkt].insert_many(transformed_items) # 插入格式正确的数据
+                         print(f'✅ 成功将 {len(transformed_items)} 条转换后的数据导入到 {mkt} 集合！')
                      else:
                          print(f'⚠️ {mkt} 数据为空。')
          "
