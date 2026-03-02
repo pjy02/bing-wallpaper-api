@@ -1,9 +1,9 @@
-# name: update-bing-walpaper
+name: update-bing-walpaper
 
 on:
   push:
-    branches:
-     - master
+#    branches:
+#     - master
   schedule:
    - cron: '30 0 * * *'
   repository_dispatch:
