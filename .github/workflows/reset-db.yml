@@ -1,0 +1,42 @@
+name: 2-清空数据库(触发原生初始化)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reset-database:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout代码
+       uses: actions/checkout@v4
+    
+     - name: 配置 Python 环境
+       uses: actions/setup-python@v5
+       with:
+        python-version: 3.9.12
+
+     - name: 安装项目依赖
+       working-directory: ./bing_wallpaper_api
+       run: |
+         pip install -r requirements.txt
+       
+     - name: 执行清空指令
+       env:
+         MONGODB_URI: ${{ secrets.MONGODB_URI }}
+         STORAGE_TYPE: mongodb
+       working-directory: ./
+       run: |
+         python -c "
+         import sys, os
+         sys.path.append(os.path.abspath('bing_wallpaper_api'))
+         from utils.mongodb_utils import db_init
+         
+         mkts = ['zh-CN', 'en-US', 'ja-JP', 'en-GB', 'de-DE', 'fr-FR', 'it-IT', 'en-CA', 'en-IN']
+         for mkt in mkts:
+             try:
+                 collection = db_init(mkt)
+                 collection.delete_many({})
+                 print(f'✅ 成功清空集合，当前数据量归零: {mkt}')
+             except Exception as e:
+                 print(f'❌ 清空 {mkt} 失败: {e}')
+         "
