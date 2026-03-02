@@ -1,0 +1,46 @@
+name: 1-手动导入历史数据到MongoDB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import-data:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout代码
+       uses: actions/checkout@v4
+    
+     - name: 配置 Python 环境
+       uses: actions/setup-python@v5
+       with:
+        python-version: 3.9.12
+
+     - name: 安装数据库驱动
+       run: pip install pymongo
+       
+     - name: 执行导入脚本
+       env:
+         MONGODB_URI: ${{ secrets.MONGODB_URI }}
+       run: |
+         python -c "
+         import json, os
+         from pymongo import MongoClient
+         
+         client = MongoClient(os.environ['MONGODB_URI'])
+         db = client['bing']
+         mkts = ['zh-CN', 'en-US', 'ja-JP', 'en-GB', 'de-DE', 'fr-FR', 'it-IT', 'en-CA', 'en-IN']
+         
+         for mkt in mkts:
+             path = f'data/{mkt}_all.json'
+             if os.path.exists(path):
+                 print(f'正在处理 {mkt}...')
+                 with open(path, 'r', encoding='utf-8') as f:
+                     data = json.load(f)
+                     items = data.get('data', [])
+                     if items:
+                         db[mkt].delete_many({}) # 先清空旧数据防止重复
+                         db[mkt].insert_many(items) # 批量插入历史数据
+                         print(f'✅ 成功将 {len(items)} 条历史数据导入到 {mkt} 集合！')
+                     else:
+                         print(f'⚠️ {mkt} 数据为空。')
+         "
