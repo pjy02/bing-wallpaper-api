@@ -62,9 +62,9 @@ jobs:
       - name: Sync to Gitee
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-          # ⚠️ 请修改下面这两行内容：
-          GITEE_USER: "你的Gitee用户名"  # 替换成你的 Gitee 个人空间地址名 (URL上的那个名字)
-          GITEE_REPO: "你的Gitee仓库名"  # 替换成你在 Gitee 上对应的仓库名称
+          # 使用 Secrets 来隐藏用户名和仓库名
+          GITEE_USER: ${{ secrets.GITEE_USER }}
+          GITEE_REPO: ${{ secrets.GITEE_REPO }}
         run: |
           # 屏蔽 git 输出中的凭证信息
           git config --global credential.helper store
