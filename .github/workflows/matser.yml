@@ -5,7 +5,7 @@ on:
 #    branches:
 #     - master
   schedule:
-   - cron: '30 0 * * *'
+    - cron: '30 * * * *'
   repository_dispatch:
     types:
       - webhook
@@ -20,42 +20,61 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-     - name: Checkout
-       uses: actions/checkout@master
-    
-     - name: Set up Python
-       uses: actions/setup-python@v5
-       with:
-        cache: 'pip'
-        python-version: 3.9.12
+      - name: Checkout
+        uses: actions/checkout@master
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          cache: 'pip'
+          python-version: 3.9.12
 
-     - name: Install Requirements
-       working-directory: ./bing_wallpaper_api
-       run: |
-         pip install --upgrade pip 'pip<24.1'
-         pip install -r requirements.txt
-         pip install tencentcloud-sdk-python
-         pip install tencentcloud-sdk-python-cdn   
- 
-     - name: mongodb Update bing
-       if: ${{ env.STORAGE_TYPE == 'mongodb' }}  
-       env:
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-       working-directory: ./
-       run: |
-         python bing_wallpaper_api/run.py
-         python bing_wallpaper_api/run_fix_last_day.py
-         
-     - name: Commit json Files
-       run: |
-         sh commit.sh
+      - name: Install Requirements
+        working-directory: ./bing_wallpaper_api
+        run: |
+          pip install --upgrade pip 'pip<24.1'
+          pip install -r requirements.txt
+          pip install tencentcloud-sdk-python
+          pip install tencentcloud-sdk-python-cdn   
 
-     - name: Push changes
-       uses:  ad-m/github-push-action@master
-       with:
-         github_token: ${{ secrets.GITHUB_TOKEN }}
-         branch: master
+      - name: mongodb Update bing
+        if: ${{ env.STORAGE_TYPE == 'mongodb' }}  
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        working-directory: ./
+        run: |
+          python bing_wallpaper_api/run.py
+          python bing_wallpaper_api/run_fix_last_day.py
+          
+      - name: Commit json Files
+        run: |
+          sh commit.sh
 
-#     - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
-#       run: |
-#         python cdn.py ${{ secrets.TENCENT_SECRETID }} ${{ secrets.TENCENT_SECRETKEY }} ${{ secrets.CDN_URL }}
+      - name: Push changes to GitHub
+        uses:  ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
+
+      # =========================================
+      # 以下是新增的同步到 Gitee 的步骤
+      # =========================================
+      - name: Sync to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          # ⚠️ 请修改下面这两行内容：
+          GITEE_USER: "你的Gitee用户名"  # 替换成你的 Gitee 个人空间地址名 (URL上的那个名字)
+          GITEE_REPO: "你的Gitee仓库名"  # 替换成你在 Gitee 上对应的仓库名称
+        run: |
+          # 屏蔽 git 输出中的凭证信息
+          git config --global credential.helper store
+          
+          # 添加 Gitee 作为远程仓库
+          git remote add gitee https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${GITEE_REPO}.git
+          
+          # 将刚才 commit 的内容强推到 Gitee 的 master 分支
+          git push gitee HEAD:master -f
+
+#      - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
+#        run: |
+#          python cdn.py ${{ secrets.TENCENT_SECRETID }} ${{ secrets.TENCENT_SECRETKEY }} ${{ secrets.CDN_URL }}
