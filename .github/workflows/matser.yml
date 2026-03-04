@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # 必须保留，防止 shallow update 报错
         
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -59,23 +59,22 @@ jobs:
           branch: master
 
       # =========================================
-      # 以下是新增的同步到 Gitee 的步骤
+      # 以下是替换为同步到阿里云 Codeup 的步骤
       # =========================================
-      - name: Sync to Gitee
+      - name: Sync to Aliyun Codeup
         env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-          # 使用 Secrets 来隐藏用户名和仓库名
-          GITEE_USER: ${{ secrets.GITEE_USER }}
-          GITEE_REPO: ${{ secrets.GITEE_REPO }}
+          CODEUP_USER: ${{ secrets.CODEUP_USER }}
+          CODEUP_TOKEN: ${{ secrets.CODEUP_TOKEN }}
+          CODEUP_REPO_PATH: ${{ secrets.CODEUP_REPO_PATH }}
         run: |
           # 屏蔽 git 输出中的凭证信息
           git config --global credential.helper store
           
-          # 添加 Gitee 作为远程仓库
-          git remote add gitee https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${GITEE_REPO}.git
+          # 添加 Codeup 作为远程仓库 (拼接认证信息)
+          git remote add codeup https://${CODEUP_USER}:${CODEUP_TOKEN}@codeup.aliyun.com/${CODEUP_REPO_PATH}
           
-          # 将刚才 commit 的内容强推到 Gitee 的 master 分支
-          git push gitee HEAD:master -f
+          # 将刚才 commit 的内容强推到 Codeup 的 master 分支
+          git push codeup HEAD:master -f
 
 #      - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
 #        run: |
