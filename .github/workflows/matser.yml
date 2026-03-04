@@ -59,22 +59,22 @@ jobs:
           branch: master
 
       # =========================================
-      # 以下是替换为同步到阿里云 Codeup 的步骤
+      # 以下是替换为同步到 cnb.cool 的步骤
       # =========================================
-      - name: Sync to Aliyun Codeup
+      - name: Sync to CNB
         env:
-          CODEUP_USER: ${{ secrets.CODEUP_USER }}
-          CODEUP_TOKEN: ${{ secrets.CODEUP_TOKEN }}
-          CODEUP_REPO_PATH: ${{ secrets.CODEUP_REPO_PATH }}
+          CNB_USER: ${{ secrets.CNB_USER }}
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          CNB_REPO: ${{ secrets.CNB_REPO }}
         run: |
           # 屏蔽 git 输出中的凭证信息
           git config --global credential.helper store
           
-          # 添加 Codeup 作为远程仓库 (拼接认证信息)
-          git remote add codeup https://${CODEUP_USER}:${CODEUP_TOKEN}@codeup.aliyun.com/${CODEUP_REPO_PATH}
+          # 添加 CNB 作为远程仓库 (使用变量隐藏仓库地址)
+          git remote add cnb https://${CNB_USER}:${CNB_TOKEN}@cnb.cool/${CNB_REPO}.git
           
-          # 将刚才 commit 的内容强推到 Codeup 的 master 分支
-          git push codeup HEAD:master -f
+          # 将刚才 commit 的内容强推到 CNB 的 master 分支
+          git push cnb HEAD:master -f
 
 #      - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
 #        run: |
