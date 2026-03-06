@@ -1,12 +1,11 @@
-name: update-bing-walpaper
+name: update-bing-wallpaper
 
 on:
 #  push:
 #    branches:
 #     - master
   schedule:
-    - cron: '17 * * * *'
-  repository_dispatch:
+    - cron: '17 * * * *' 
     types:
       - webhook
   workflow_dispatch:
@@ -21,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v4 # 升级到较新的稳定版本
         with:
           fetch-depth: 0 # 必须保留，防止 shallow update 报错
         
@@ -36,8 +35,9 @@ jobs:
         run: |
           pip install --upgrade pip 'pip<24.1'
           pip install -r requirements.txt
-          pip install tencentcloud-sdk-python
-          pip install tencentcloud-sdk-python-cdn   
+          # 既然去掉了 CDN 刷新步骤，这里的腾讯云 SDK 依赖也一并注释掉，提升安装速度
+          # pip install tencentcloud-sdk-python
+          # pip install tencentcloud-sdk-python-cdn   
 
       - name: mongodb Update bing
         if: ${{ env.STORAGE_TYPE == 'mongodb' }}  
@@ -53,7 +53,7 @@ jobs:
           sh commit.sh
 
       - name: Push changes to GitHub
-        uses:  ad-m/github-push-action@master
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: master
