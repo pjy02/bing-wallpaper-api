@@ -5,7 +5,7 @@ on:
 #    branches:
 #     - master
   schedule:
-    - cron: '17 * * * *'→ Runs at 30 minutes past the hour
+    - cron: '17 * * * *'
   repository_dispatch:
     types:
       - webhook
