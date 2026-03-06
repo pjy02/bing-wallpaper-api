@@ -1,11 +1,9 @@
 name: update-bing-wallpaper
 
 on:
-#  push:
-#    branches:
-#     - master
   schedule:
-    - cron: '17 * * * *' 
+    - cron: '17 * * * *' # 已修改：每个小时的第 17 分钟运行，避开拥堵高峰
+  repository_dispatch:
     types:
       - webhook
   workflow_dispatch:
@@ -75,7 +73,3 @@ jobs:
           
           # 将刚才 commit 的内容强推到 CNB 的 master 分支
           git push cnb HEAD:master -f
-
-#      - name: Refresh CDN #没有使用腾讯云cdn可删除该步骤
-#        run: |
-#          python cdn.py ${{ secrets.TENCENT_SECRETID }} ${{ secrets.TENCENT_SECRETKEY }} ${{ secrets.CDN_URL }}
